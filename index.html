@@ -55,7 +55,7 @@ carImg.src = "https://i.imgur.com/xpZ7p8h.png"; // coche top-down
 
 // Fondo pista seguro (enlace Imgur libre)
 const roadTrack = new Image();
-roadTrack.src = "https://i.imgur.com/1iVJRdk.jpeg"; // pista top-down con curvas
+roadTrack.src = "https://i.imgur.com/XcQ2e3Y.jpeg"; // pista top-down con curvas
 
 /* Partículas de humo */
 class Smoke {
@@ -160,7 +160,7 @@ function draw() {
   ctx.fillStyle = "#fff";
   ctx.font = "22px Arial";
   ctx.fillText("Drift points: " + score, 20, 40);
-  ctx.fillText("Velocidad: " + Math.floor(car.speed * 20) + " km/h", 20, 130);
+  ctx.fillText("Velocidad: " + Math.floor(car.speed * 20) + " km/h", 20, 70);
 }
 
 /* ============ LOOP ============ */
@@ -174,4 +174,3 @@ loop();
 
 </body>
 </html>
-
