@@ -51,13 +51,13 @@ resize();
 
 /* ============ IMÁGENES ============ */
 const carImg = new Image();
-carImg.src = "https://static.vecteezy.com/system/resources/previews/019/546/442/non_2x/sport-car-isolated-on-transparent-background-3d-rendering-illustration-free-png.png"; // coche top-down realista
+carImg.src = "https://i.imgur.com/6rKcJ1y.png"; // coche top-down
 
-/* Fondo asfalto */
-const roadPattern = new Image();
-roadPattern.src = "https://ae01.alicdn.com/kf/S20bd907a56db49ff9a81276093d98a5d7.png"; // reemplaza con tu textura real
+// Fondo pista seguro (enlace Imgur libre)
+const roadTrack = new Image();
+roadTrack.src = "https://i.imgur.com/ypK0vMm.jpg"; // pista top-down con curvas
 
-/* Partículas de humo para derrape */
+/* Partículas de humo */
 class Smoke {
   constructor(x, y) {
     this.x = x;
@@ -81,14 +81,13 @@ const car = {
   y: canvas.height / 2,
   angle: 0,
   speed: 0,
-  maxSpeed: 4.44, // aprox 80 km/h si cada unidad ~20 km/h (ajustado para juego)
+  maxSpeed: 4.44, // ~80 km/h
   drift: 0.96
 };
 
 let keys = {};
 let score = 0;
 let driftCounter = 0;
-let gameTime = 0;
 
 /* ============ CONTROLES ============ */
 document.addEventListener("keydown", e => keys[e.key] = true);
@@ -104,12 +103,10 @@ document.addEventListener("touchend", () => {
 
 /* ============ UPDATE ============ */
 function update() {
-  // Velocidad
   if (keys["ArrowUp"]) car.speed += 0.15;
   else car.speed *= 0.98;
   car.speed = Math.min(car.speed, car.maxSpeed);
 
-  // Giro
   if (keys["ArrowLeft"]) car.angle -= 0.04;
   if (keys["ArrowRight"]) car.angle += 0.04;
 
@@ -118,39 +115,34 @@ function update() {
   car.y += Math.sin(car.angle) * car.speed;
   car.speed *= car.drift;
 
-  // Partículas de humo al derrapar
+  // Partículas de humo
   if ((keys["ArrowLeft"] || keys["ArrowRight"]) && car.speed > 2) {
     smokes.push(new Smoke(car.x - Math.cos(car.angle) * 20, car.y - Math.sin(car.angle) * 20));
     driftCounter += 0.2;
   } else {
-    driftCounter *= 0.95; // decay del multiplicador
+    driftCounter *= 0.95;
   }
 
-  // Sumar puntos multiplicador
-  if (driftCounter > 0.1) {
-    score += Math.floor(driftCounter);
-  }
+  // Puntos
+  if (driftCounter > 0.1) score += Math.floor(driftCounter);
 
-  // Limitar en pantalla
+  // Mantener en pantalla
   if (car.x < 0) car.x = canvas.width;
   if (car.x > canvas.width) car.x = 0;
   if (car.y < 0) car.y = canvas.height;
   if (car.y > canvas.height) car.y = 0;
 
-  // Actualizar partículas
   smokes.forEach(s => s.update());
   smokes = smokes.filter(s => s.alpha > 0);
 }
 
 /* ============ DRAW ============ */
 function draw() {
-  // Fondo
+  // Fondo pista
   if (roadTrack.complete) {
-    // Ajustamos la imagen al tamaño del canvas
     ctx.drawImage(roadTrack, 0, 0, canvas.width, canvas.height);
   } else {
-    // Fallback si la imagen no carga
-    ctx.fillStyle = "#333"; // fondo gris
+    ctx.fillStyle = "#333";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
@@ -164,7 +156,7 @@ function draw() {
   ctx.drawImage(carImg, -32, -16, 64, 32);
   ctx.restore();
 
-  // HUD: Puntos y velocidad
+  // HUD
   ctx.fillStyle = "#fff";
   ctx.font = "22px Arial";
   ctx.fillText("Drift points: " + score, 20, 40);
@@ -182,3 +174,4 @@ loop();
 
 </body>
 </html>
+
