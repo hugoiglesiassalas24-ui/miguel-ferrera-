@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Miguel Ferrera Drift</title>
+<title>Miguel Ferrera Drift Pro</title>
 
 <style>
 html, body {
@@ -39,7 +39,6 @@ canvas {
 <canvas id="game"></canvas>
 
 <script>
-/* ============ CANVAS ============ */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -52,10 +51,29 @@ resize();
 
 /* ============ IMÁGENES ============ */
 const carImg = new Image();
-carImg.src = "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjupEjUBo8hWNegfLKhi7Z3uqcduPX_cnRQweesjUsHCi7iTklWQu7DsJwTCP5TxXjpZkpEN_9BvfqL2ZdIvMp0SQTeRq5LOdrN9cval7wfpWBDXKa3LHZhN0BovZOQdeun6CxovEt13HvG/w1200-h630-p-k-no-nu/6.-+DIEGO+VILLALBA+CARDENAS.JPG"; // coche realista top-down
+carImg.src = "https://static.vecteezy.com/system/resources/previews/019/546/442/non_2x/sport-car-isolated-on-transparent-background-3d-rendering-illustration-free-png.png"; // coche top-down realista
 
+/* Fondo asfalto */
 const roadPattern = new Image();
-roadPattern.src = "https://www.shutterstock.com/shutterstock/videos/15781360/thumb/1.jpg?ip=x480"; // asfalto
+roadPattern.src = "https://ae01.alicdn.com/kf/S20bd907a56db49ff9a81276093d98a5d7.png"; // reemplaza con tu textura real
+
+/* Partículas de humo para derrape */
+class Smoke {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = Math.random() * 5 + 5;
+    this.alpha = 1;
+  }
+  update() { this.alpha -= 0.02; this.y -= 0.3; }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(200,200,200," + this.alpha + ")";
+    ctx.fill();
+  }
+}
+let smokes = [];
 
 /* ============ COCHE ============ */
 const car = {
@@ -63,22 +81,22 @@ const car = {
   y: canvas.height / 2,
   angle: 0,
   speed: 0,
-  maxSpeed: 8,
-  drift: 0.94
+  maxSpeed: 4.44, // aprox 80 km/h si cada unidad ~20 km/h (ajustado para juego)
+  drift: 0.96
 };
 
 let keys = {};
 let score = 0;
+let driftCounter = 0;
+let gameTime = 0;
 
 /* ============ CONTROLES ============ */
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
-
 document.addEventListener("touchstart", e => {
   if (e.touches[0].clientX < window.innerWidth / 2) keys["ArrowLeft"] = true;
   else keys["ArrowRight"] = true;
 });
-
 document.addEventListener("touchend", () => {
   keys["ArrowLeft"] = false;
   keys["ArrowRight"] = false;
@@ -86,45 +104,58 @@ document.addEventListener("touchend", () => {
 
 /* ============ UPDATE ============ */
 function update() {
-
-  if (keys["ArrowUp"]) car.speed += 0.2;
+  // Velocidad
+  if (keys["ArrowUp"]) car.speed += 0.15;
   else car.speed *= 0.98;
-
   car.speed = Math.min(car.speed, car.maxSpeed);
 
-  if (keys["ArrowLeft"]) car.angle -= 0.05;
-  if (keys["ArrowRight"]) car.angle += 0.05;
+  // Giro
+  if (keys["ArrowLeft"]) car.angle -= 0.04;
+  if (keys["ArrowRight"]) car.angle += 0.04;
 
   // Movimiento con derrape
   car.x += Math.cos(car.angle) * car.speed;
   car.y += Math.sin(car.angle) * car.speed;
-
   car.speed *= car.drift;
 
-  // Puntos por derrape
-  if ((keys["ArrowLeft"] || keys["ArrowRight"]) && car.speed > 4) {
-    score += 1;
+  // Partículas de humo al derrapar
+  if ((keys["ArrowLeft"] || keys["ArrowRight"]) && car.speed > 2) {
+    smokes.push(new Smoke(car.x - Math.cos(car.angle) * 20, car.y - Math.sin(car.angle) * 20));
+    driftCounter += 0.2;
+  } else {
+    driftCounter *= 0.95; // decay del multiplicador
   }
 
-  // Mantener en pantalla
+  // Sumar puntos multiplicador
+  if (driftCounter > 0.1) {
+    score += Math.floor(driftCounter);
+  }
+
+  // Limitar en pantalla
   if (car.x < 0) car.x = canvas.width;
   if (car.x > canvas.width) car.x = 0;
   if (car.y < 0) car.y = canvas.height;
   if (car.y > canvas.height) car.y = 0;
+
+  // Actualizar partículas
+  smokes.forEach(s => s.update());
+  smokes = smokes.filter(s => s.alpha > 0);
 }
 
 /* ============ DRAW ============ */
 function draw() {
-
-  // Fondo asfalto
-  if (roadPattern.complete) {
-    const pattern = ctx.createPattern(roadPattern, "repeat");
-    ctx.fillStyle = pattern;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Fondo
+  if (roadTrack.complete) {
+    // Ajustamos la imagen al tamaño del canvas
+    ctx.drawImage(roadTrack, 0, 0, canvas.width, canvas.height);
   } else {
-    ctx.fillStyle = "#333";
+    // Fallback si la imagen no carga
+    ctx.fillStyle = "#333"; // fondo gris
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
+
+  // Humo
+  smokes.forEach(s => s.draw());
 
   // Coche
   ctx.save();
@@ -133,10 +164,11 @@ function draw() {
   ctx.drawImage(carImg, -32, -16, 64, 32);
   ctx.restore();
 
-  // HUD
+  // HUD: Puntos y velocidad
   ctx.fillStyle = "#fff";
   ctx.font = "22px Arial";
   ctx.fillText("Drift points: " + score, 20, 40);
+  ctx.fillText("Velocidad: " + Math.floor(car.speed * 20) + " km/h", 20, 70);
 }
 
 /* ============ LOOP ============ */
